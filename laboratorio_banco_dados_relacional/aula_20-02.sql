@@ -215,7 +215,7 @@ as
 /* EXERCICIOS
 
 1 - criar uma view para armazenar como relatório os veiculos
-que possuem ano de fabriação superior a 2024 e cor prata. 
+que possuem ano de fabricação superior a 2024 e cor prata. 
 No resultado da view apresentar o modelo, marca, placa, cor e
 ano de fabricação. 
 
@@ -224,4 +224,212 @@ uma mensagem da quantidade de veículos encontrados no banco
 com a marca que foi passada por parametro. 
 */
 
+-- 1 exercicio
+CREATE VIEW vw_veiculos_ano_cor AS
+SELECT 
+    v.modelo,
+    m.marca,
+    v.placa,
+    v.cor,
+    v.anofabricacao
+FROM marca m  INNER JOIN veiculo v
+    ON m.codigo = v.codigomarca
+WHERE v.anofabricacao > 2024
+  AND v.cor = 'Prata';
+--fim
 
+SELECT * FROM vw_veiculos_ano_cor;
+
+-- 2 exercicio
+
+CREATE PROCEDURE sp_qtd_veiculos_por_marca
+    @marca VARCHAR(100)
+AS
+BEGIN
+    DECLARE @quantidade INT;
+
+    SELECT @quantidade = COUNT(v.placa)
+    FROM dbo.veiculo v
+    INNER JOIN dbo.marca m
+        ON m.codigo = v.codigomarca
+    WHERE m.marca = @marca;
+
+    PRINT 'Quantidade de veículos encontrados: ' + CAST(@quantidade AS VARCHAR);
+END;
+
+--fim
+
+EXEC sp_qtd_veiculos_por_marca 'Fiat'; --exemplo
+
+
+----- AULA 27/02 ----
+
+--alterações no exercicio
+ALTER PROCEDURE sp_qtd_veiculos_por_marca
+    @marca VARCHAR(100), @ano int
+AS
+BEGIN
+    DECLARE @quantidade INT;
+
+    SELECT @quantidade = COUNT(v.placa)
+    FROM dbo.veiculo v
+    INNER JOIN dbo.marca m
+        ON m.codigo = v.codigomarca
+    WHERE m.marca = @marca;
+
+    PRINT 'Quantidade de veículos encontrados: ' + CAST(@quantidade AS VARCHAR);
+
+    DECLARE @qtdano int --new
+    set @qtdano = (select count(v.placa)
+                    from marca m inner join veiculo v 
+                        ON m.codigo = v.codigomarca
+                    where anofabricacao = @ano)
+    print ('Encontrado ' + convert(varchar, @qtdano) + ' veiculos do ano ' + convert(varchar,@ano))
+
+END;
+
+exec sp_qtd_veiculos_por_marca 'fiat', 2000
+
+--alterações no exercicio
+ALTER PROCEDURE sp_qtd_veiculos_por_marca
+    @marca VARCHAR(100), @ano int
+AS
+BEGIN
+    DECLARE @qt INT;
+    set @qt = (select count(v.placa)
+                from marca m inner join veiculo v on m.codigo=v.codigomarca
+                where m.marca = @marca)
+print ('Encontrado ' + convert(varchar, @qt) + ' veiculos da marca ' + @marca)
+
+ set @qt = (select count (v.placa)
+            from veiculo v 
+            where v.anofabricacao = @ano)
+print ('Encontrado ' + convert(varchar, @qt) + ' veiculos do ano ' + convert(varchar,@ano))
+
+set @qt = (select count(v.placa)
+            from marca m inner join veiculo v
+            on m.codigo=v.codigomarca
+            where m.marca = @marca and v.anofabricacao = @ano)
+print ('Encontrado ' + convert(varchar,@qt) + ' veiculos da marca ' 
++ @marca + ' e do ano ' + convert(varchar,@ano) )
+
+END;
+
+exec sp_qtd_veiculos_por_marca 'fiat', 1964
+
+---nova
+
+create procedure decisao
+@ano float
+as
+    declare @media float
+    declare @qtd int
+    set @media = (select avg(valorfipe)
+                   from veiculo   
+                   where anofabricacao < @ano)
+    if @media = null
+        print('O valor da media zerou')
+    else
+        print ('Média do valor dos veiculos inferior a ' 
+                + convert(varchar, @ano)
+                + ' é ' 
+                + convert(varchar, convert(numeric(10,2),@media)))
+
+
+alter procedure decisao
+@ano float
+as
+    declare @media float
+    declare @qtd int
+    set @media = (select avg(valorfipe)
+                   from veiculo   
+                   where anofabricacao < @ano)
+    if @media is null
+        print('O valor da media zerou, não encontrei veiculos inferior a ' + convert(varchar,@ano))
+    else
+        print ('Média do valor dos veiculos inferior a ' 
+                + convert(varchar, @ano)
+                + ' é ' 
+                + convert(varchar, convert(numeric(10,2),@media)))
+
+
+exec decisao 202012
+
+--new2
+
+alter procedure antigonovo
+@opcao varchar(1)
+as
+    declare @inf varchar(200) = ''
+    declare @valor int
+    
+    if @opcao = 'V' or @opcao = 'v'
+       begin
+            set @valor = (select min(anofabricacao) from veiculo)
+            set @inf = @inf + 'O veiculo mais antigo tem ' + convert(varchar,@valor) + ' anos'
+    end else begin
+           if @opcao = 'n' or @opcao = 'N'
+           begin
+            set @valor = (select max(anofabricacao) from veiculo)
+            set @inf = @inf + 'O veiculo mais antigo tem ' + convert(varchar,@valor) + ' anos'
+            end else begin
+            print('Parametro opcao incorreto')
+            end
+     end
+
+    print(@inf)
+
+    exec antigonovo v
+
+    /* EXERCICIO - Criar uma procedure para simular uma calculadora
+            A procedure deve receber 3 parametros, Operacao, valor 1 e valor 2
+            As operacoes (+ - * / ) deve calcular e apresentar o valor com print
+
+    */
+
+ALTER PROCEDURE calculadora
+    @operacao VARCHAR(1),
+    @valor1 FLOAT,
+    @valor2 FLOAT
+AS
+BEGIN
+    DECLARE @resultado FLOAT;
+
+    -- operação de soma
+    IF @operacao = '+'  
+    BEGIN
+        SET @resultado = @valor1 + @valor2;
+    END
+
+    -- operação de diferença
+    IF @operacao = '-' 
+    BEGIN
+        SET @resultado = @valor1 - @valor2
+    END
+
+    --operação de multiplicação
+    IF @operacao = '*' 
+    BEGIN
+        SET @resultado = @valor1 * @valor2
+    END
+
+    --operação de divisao
+
+    IF @operacao = '/' 
+    BEGIN
+        if @valor2 = 0
+            begin
+                print ('Nao é possivel dividir por 0')
+            end
+        SET @resultado = @valor1 / @valor2
+    END
+  
+    PRINT 'Resultado: ' + convert(varchar, @resultado);
+END
+
+exec calculadora '/',10,4
+
+
+
+    
+   
