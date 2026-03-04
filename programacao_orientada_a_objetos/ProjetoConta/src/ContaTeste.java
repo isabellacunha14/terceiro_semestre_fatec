@@ -24,23 +24,12 @@ public class ContaTeste {
             contaTeste.sc.nextLine(); // limpa o ENTER pendente
 
             switch (op) {
-                case 1:
-                    contaTeste.execCadastrar();
-                    break;
-                case 2:
-                    contaTeste.execConsultar();
-                    break;
-                case 3:
-                    contaTeste.execDepositar();
-                    break;
-                case 4:
-                    contaTeste.execSacar();
-                    break;
-                case 0:
-                    System.out.println("Encerrando o sistema...");
-                    break;
-                default:
-                    System.out.println("Opção inválida. Tente novamente.");
+                case 1 -> contaTeste.execCadastrar();
+                case 2 -> contaTeste.execConsultar();
+                case 3 -> contaTeste.execDepositar();
+                case 4 -> contaTeste.execSacar();
+                case 0 -> System.out.println("Encerrando o sistema...");
+                default -> System.out.println("Opção inválida. Tente novamente.");
             }
 
         } while (op != 0);
