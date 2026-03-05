@@ -395,34 +395,19 @@ AS
 BEGIN
     DECLARE @resultado FLOAT;
 
-    -- operação de soma
-    IF @operacao = '+'  
-    BEGIN
+    
+    IF @operacao = '+'  -- operação de soma
         SET @resultado = @valor1 + @valor2;
-    END
-
-    -- operação de diferença
-    IF @operacao = '-' 
-    BEGIN
-        SET @resultado = @valor1 - @valor2
-    END
-
-    --operação de multiplicação
-    IF @operacao = '*' 
-    BEGIN
-        SET @resultado = @valor1 * @valor2
-    END
-
-    --operação de divisao
-
-    IF @operacao = '/' 
-    BEGIN
-        if @valor2 = 0
-            begin
-                print ('Nao é possivel dividir por 0')
-            end
-        SET @resultado = @valor1 / @valor2
-    END
+    ELSE IF @operacao = '-' -- operação de diferença
+               SET @resultado = @valor1 - @valor2
+    ELSE IF @operacao = '*' --operação de multiplicação
+                SET @resultado = @valor1 * @valor2
+    ELSE IF @operacao = '/' --operação de divisao
+            BEGIN
+                if @valor2 = 0
+                    print ('Nao é possivel dividir por 0')
+                SET @resultado = @valor1 / @valor2
+            END
   
     PRINT 'Resultado: ' + convert(varchar, @resultado);
 END
