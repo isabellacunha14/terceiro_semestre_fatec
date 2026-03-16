@@ -174,7 +174,7 @@ alter procedure listaveiculos2
     @valor int  -- parametros da procedure
 as
     declare @qtd int -- declarar variavel interna
-    set @qtd = 10-- atribuir valor para variavel
+    set @qtd = 10 -- atribuir valor para variavel
     print ('valor atual ' + convert(varchar, @qtd))
     set @qtd = @valor * 10
     print ('valor final ' + convert(varchar,@qtd))
@@ -414,7 +414,190 @@ END
 
 exec calculadora '/',10,4
 
+--- aula 06/03
+
+create table log (sequencia int not null identity(1,1), momento datetime, 
+                  ocorrencia varchar(255))
+
+select * from log
+
+-- procedure para pesquisar uma marca no banco. se encontrar a marca, apresentar 
+--a qtd de veiculos cadastrados nessa marca, senão cadastrar a marca na tabela. 
+create procedure validamarca 
+ @marca varchar(20)
+as
+ declare @codigo int = 0
+ --set @codigo = (select codigo from marca where marca = @marca)
+ select @codigo = codigo from marca where marca = @marca
+ if @codigo = 0 
+ begin
+    print ('Marca não cadastrada no banco de dados. Cadastrando a marca...')
+	insert into marca values (@marca)
+	print ('marca cadastrada com sucesso...')
+	insert into log (momento, ocorrencia) values (getdate(),'Cadastrado a marca '+@marca)
+ end else begin
+    declare @qtd int = 0
+	select @qtd = count(v.placa) from marca m inner join veiculo v 
+	              on m.codigo = v.codigomarca where m.marca = @marca
+    print ('Encontrado '+convert(varchar,@qtd) +' veiculos da marca '+ @marca)
+	insert into log values (getdate(),'Encontrado '+convert(varchar,@qtd) +' veiculos da marca '+ @marca)
+ end
+
+ exec validamarca 'Gurgel'
+ select * from log
+
+ create table proprietario (codigo int not null identity(100,1), 
+                      nome varchar(50), idade int, cidade varchar(50),
+					  sexo varchar(1), 
+					  constraint pk_proprietario primary key (codigo))
+
+insert into proprietario values ('Pedro',19,'São paulo','M'),
+                                ('Maria',20,'Mogi Mirim','F'),
+								('Juan',34,'Guaçu','M'),
+								('Joao',54,'Campinas','M'),
+								('Thiago',31,'Mogi Mirim','M'),
+								('Adriana',29,'Estiva','F'),
+								('Andre',51,'Campinas','M')
+
+select * from proprietario
+
+alter table veiculo add proprietario int, constraint fk_pro_veic foreign key
+                             (proprietario) references proprietario (codigo)
+
+select * from veiculo 
 
 
-    
-   
+/* exercicio
+ao executar uma procedure cadastro_veiculo o usuário devera passar como parametro
+os campos:
+
+exec cadastro_Veiculo 'AAA0000','Wv','Fusca','Preto',1969,40000,'Gasolina','Adriana'
+
+3 problemas?
+- se passar a placa vazio.
+- existe a marca? e se não existir?
+- existe o proprietario? e se não existir?
+*/
+
+-- aula 13/03
+
+update veiculo set proprietario = 101 where placa in ('AAA1961','AIA3812')
+update veiculo set proprietario = 103 where placa in ('BBB1962','BWO9997','BZG2775',
+                                                      'CCCA1011','CCC1963','CDE9812','DDD1964')
+update veiculo set proprietario = 102 where placa in ('DQP9833','DWH1011','EDZ1234','EEE1965',
+                                                       'EMI2811','EVK4471','FBA1045','FER3254','FFF1966')
+update veiculo set proprietario = 106 where placa in ('FGL7612','FMU4G99')
+update veiculo set proprietario = 104 where placa in ('GGG1967','HAU4468','HHH1968','III1969','JJJ1960','KKK2024',
+                                                       'LLL2025','MMM2026','NNN2153','NXO1920','OMT1711','OOO2013',
+                                                       'PPP2026', 'QQQ1997')
+
+alter procedure cadastra_veiculo
+@placa varchar(7),
+@marca varchar(10),
+@modelo varchar(30),
+@cor varchar (30),
+@ano int,
+@valor float,
+@motor varchar (15),
+@proprietario varchar(50)
+as
+    if @placa != '' 
+    begin
+        declare @existemarca int = 0, @existepropr int = 0
+        set @existemarca = (select count(codigo) from marca where marca = @marca)
+        set @existepropr = (select count(codigo) from proprietario where nome = @proprietario)
+        if @existemarca = 0 
+        begin
+            insert into marca values (@marca)
+            print('Cadastrado a nova marca,' +@marca)
+        end
+        declare @codigomarca int
+        set @codigomarca = (select codigo from marca where marca = @marca)
+        if @existepropr = 0
+        begin 
+            insert into proprietario (nome) values (@proprietario)       
+            print ('Cadastrado proprietario, preencher o restante dos dados')
+        end   
+        declare @codigopr int
+        set @codigopr = (select codigo from proprietario where nome = @proprietario)
+       insert into veiculo (placa,codigomarca,modelo,cor,anofabricacao,valor,motor,proprietario)    values
+        (@placa,@codigomarca,@modelo,@cor,@ano,@valor,@motor,@codigopr)
+        insert into log values (getdate(),'Cadastrado novo veiculo' +@modelo)
+    end else begin
+        print ('Placa invalida')
+    end
+
+-- fim da procedure
+
+exec cadastra_veiculo 'AAA1113','FU','Calc','Branco',2010,140000,'Eletrico','IsabellaC'
+
+select *from veiculo
+
+-- procedure para consulta dinamica
+  
+alter procedure consulta_dinamica
+    @modelo varchar (20), 
+    @ano int, 
+    @cor varchar (10)
+as
+    declare @sql varchar (500)
+    set @sql = 'select placa, modelo, cor, anofabricacao'
+    set @sql = @sql + ' from veiculo'
+    set @sql = @sql + ' where 1=1'
+   if @modelo is not null
+    set @sql = @sql + ' and modelo = ''' + @modelo + ''''
+   if @ano is not null
+    set @sql = @sql + 'and anofabricacao = '+convert(varchar, @ano)
+   if @cor is not null
+    set @sql = @sql + 'and cor= '''+@cor+''''
+    -- print (@sql)
+   exec (@sql)
+--- fim
+
+exec consulta_dinamica 'civic',2000,null
+
+--- exercicio
+-- criar uma procedure para deletar um proprietario do banco de daods
+-- ao deletar, observar se existe algum veiculo cadastrado para ele
+-- se tiver, avisar por mensagem a qtd de veiculos que foi excluida
+-- para depois excluir o proprietario
+-- antes de excluir o proprietario verificar se ele existe
+-- para executar a procedure utilizar exec excluir proprietario "fulano"
+
+create procedure excluir_proprietario
+    @nome varchar(50)
+as
+begin
+
+    -- verificar se o proprietario existe
+    declare @codigo int
+    select @codigo = codigo from proprietario where nome = @nome
+
+    if @codigo is null
+    begin
+        print('Proprietario não encontrado no banco de dados')
+        return
+    end
+
+    -- verificar se existem veiculos
+    declare @qtd int
+    select @qtd = count(*) from veiculo where proprietario = @codigo
+
+    if @qtd > 0
+    begin
+        print('Foram encontrados ' + convert(varchar,@qtd) + ' veiculos cadastrados para ' + @nome)
+
+        -- excluir os veiculos
+        delete from veiculo
+        where proprietario = @codigo
+
+        print('Veiculos excluidos com sucesso')
+    end
+
+    -- excluir o proprietario
+    delete from proprietario
+    where codigo = @codigo
+
+    print('Proprietario excluido com sucesso')
+
+end
