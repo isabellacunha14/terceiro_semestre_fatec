@@ -1,0 +1,5 @@
+# ninja log v6
+400	2333	7960140415270047	CMakeFiles/ProjetoPilhaCircular.dir/main.c.obj	2bbbb55441271e4e
+75	1821	7960148442446464	build.ninja	415a5bf1f76742c4
+2532	2893	7960141225029858	CMakeFiles/ProjetoPilhaCircular.dir/Fila.c.obj	414c1d32d0b5bbb5
+2894	3210	7960141228637814	ProjetoPilhaCircular.exe	bb0a47c07346b2f9

@@ -1,0 +1,3 @@
+C:/Users/user/Desktop/terceiro_semestre_fatec/estrutura_dados/ProjetoPilhaCircular/cmake-build-debug/CMakeFiles/ProjetoPilhaCircular.dir
+C:/Users/user/Desktop/terceiro_semestre_fatec/estrutura_dados/ProjetoPilhaCircular/cmake-build-debug/CMakeFiles/edit_cache.dir
+C:/Users/user/Desktop/terceiro_semestre_fatec/estrutura_dados/ProjetoPilhaCircular/cmake-build-debug/CMakeFiles/rebuild_cache.dir
