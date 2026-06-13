@@ -73,7 +73,7 @@ public class main {
                     String diretor = sc.nextLine();
 
                     System.out.print("Cotação do dólar: ");
-                    double cotacao = sc.nextDouble();
+                    'double cotacao = sc.nextDouble();'
                     sc.nextLine();
 
                     Dvd dvd = new Dvd(
