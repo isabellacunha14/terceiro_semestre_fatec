@@ -530,174 +530,232 @@ as
    exec texto 'Fatec Lab Banco' 
 
 
---- AULA 17/04/2026 ---
+create table emprestimo (sequencia int not null identity(1,1), 
+                         ano int, mes int, numeroparcela int, 
+						 valorparcela float, 
+						 constraint pk_emprestimo primary key (sequencia))
 
-CREATE TABLE emprestimo (sequencia int not null identity(1,1),
-                         ano int, mes int, numeroparcela int,
-                         valorparcela int,
-                         constraint pk_emprestimo primary key (sequencia))
+select * from emprestimo 
 
-CREATE PROCEDURE gerar_emprestimo 
+alter procedure gerar_emprestimo 
 @valoremprestimo float, @qtdparcela int
 as
-    DECLARE @ano int = year(getdate())
-    DECLARE @mes int = month(getdate())
-    set @mes += 1
-    DECLARE @parcela int = 1
-    DECLARE @valorparcela float = (@valoremprestimo/@qtdparcela)
-    WHILE (@qtdparcela > 0 )
-    begin
-        insert into emprestimo values (@ano,@mes,@parcela,@valorparcela)
-        set @mes +=1
-        set @parcela +=1
-        set @qtdparcela -=1
-    end
---fim
-
-exec gerar_emprestimo 20000, 12
-select *from emprestimo
-
-alter PROCEDURE gerar_emprestimo 
-@valoremprestimo float, @qtdparcela int
-as
-    DELETE from emprestimo
-    DECLARE @ano int = year(getdate())
-    DECLARE @mes int = month(getdate())
-    set @mes += 1
-    DECLARE @parcela int = 1
-    DECLARE @valorparcela float = (@valoremprestimo/@qtdparcela)
-    WHILE (@qtdparcela > 0 )
-    begin
-        insert into emprestimo values (@ano,@mes,@parcela,@valorparcela)
-        IF @mes >= 12 
-            begin set @mes = 1 
-            set @ano += 1
-            end
-        else
-            set @mes +=1
-        set @parcela +=1
-        set @qtdparcela -=1
-    end
---fim
-
+   delete from emprestimo
+   declare @ano int = year(getdate())
+   declare @mes int = month(getdate())
+   set @mes +=1
+   declare @parcela int = 1
+   declare @valorparcela float = (@valoremprestimo/@qtdparcela)
+   while (@qtdparcela > 0)
+   begin
+      insert into emprestimo values (@ano,@mes,@parcela,@valorparcela)
+	  if @mes >= 12 begin
+	     set @mes = 1
+		 set @ano +=1
+	  end else 
+	     set @mes +=1 
+	  set @parcela +=1
+	  set @qtdparcela -=1
+   end
+---- fim da procedure 
 exec gerar_emprestimo 20000, 230
-select *from emprestimo
+select * from emprestimo 
 
---COM JUROS
+alter procedure juros_simples 
+@valoremprestimo float, @qtdparcela int, @taxajuros float
+as
+   delete from emprestimo
+   declare @ano int = year(getdate())
+   declare @mes int = month(getdate())
+   set @mes +=1
+   declare @parcela int = 1
+   declare @juros float = 0
+   declare @saldo float = @valoremprestimo
+   while (@qtdparcela > 0)
+   begin
+      declare @valorparcela float=(@saldo/@qtdparcela)*(1+@taxajuros)
+	  insert into emprestimo values (@ano,@mes,@parcela,@valorparcela)
+	  set @juros = @juros + @valorparcela
+	  set @saldo -= (@saldo/@qtdparcela)
+ 	  set @parcela +=1
+	  set @qtdparcela -=1
+	  if @mes >= 12 begin
+	     set @mes = 1
+		 set @ano +=1
+	  end else 
+	     set @mes +=1 
+   end
+   set @juros = @juros - @valoremprestimo
+   print ('Valor dos juros'+ convert(varchar,@juros))
+---- fim da procedure 
+exec juros_simples 18000,24,0.015
+select * from emprestimo 
 
-ALTER PROCEDURE juros_simples 
-    @valoremprestimo FLOAT, 
-    @qtdparcela INT, 
-    @taxajuros FLOAT
-AS
-BEGIN
-    DELETE FROM emprestimo
+/*Exercicio
+ 1 - Alterar a procedure atual considerar apresentar no final da 
+procedure um print com o valor dos juros que será pago. 
 
-    DECLARE @ano INT = YEAR(GETDATE())
-    DECLARE @mes INT = MONTH(GETDATE()) + 1
-    DECLARE @parcela INT = 1
-    DECLARE @saldo FLOAT = @valoremprestimo
-
-    DECLARE @juros_total FLOAT = 0
-
-    WHILE (@qtdparcela > 0)
-    BEGIN
-        DECLARE @juros FLOAT = @saldo * @taxajuros
-        DECLARE @valorparcela FLOAT = (@saldo / @qtdparcela) + @juros
-
-        SET @juros_total += @juros
-
-        INSERT INTO emprestimo (ano, mes, numeroparcela, valorparcela)
-        VALUES (@ano, @mes, @parcela, @valorparcela)
-
-        SET @saldo -= (@saldo / @qtdparcela)
-
-        -- controle de data
-        IF @mes >= 12 
-        BEGIN 
-            SET @mes = 1 
-            SET @ano += 1
-        END
-        ELSE
-            SET @mes += 1    
-
-        SET @parcela += 1
-        SET @qtdparcela -= 1
-    END
-
-    PRINT 'Total de juros pago: ' + CAST(@juros_total AS VARCHAR)
-END
---fim
-
-
-/* exercicio 
-
-1. alterar a procedure atual, considerar apresentar no final da procedure
-um print com o valor dos juros que será pago
-
-2. criar uma procedure de juros_compostos que considera as parcelas
-definidas atraves do conceito de juros composto
+2- Criar uma procedure de juros_compostos que considera as parcelas
+definidas através do conceito de juros composto.
 */
 
-create PROCEDURE juros_compostos
-    @valoremprestimo FLOAT,
-    @qtdparcela INT,
-    @taxajuros FLOAT
-AS
-BEGIN
-    DELETE FROM emprestimo
+alter procedure abortar 
+@numero int
+as 
+   while (@numero > 0)
+   begin
+      print (@numero)
+	  set @numero -=1
+	  if (@numero = 6) begin
+	     print ('Numero invalido... abortando o procedimento')
+		 --return   --encerra a execução da procedure
+		 --break    -- encerra a execução do laço, sai do while.
+		 continue
+	  end
+   end
+  print ('continando....')
+-------------
+exec abortar 11
 
-    DECLARE @ano INT = YEAR(GETDATE())
-    DECLARE @mes INT = MONTH(GETDATE()) + 1
-    DECLARE @parcela INT = 1
-    DECLARE @saldo FLOAT = @valoremprestimo
+select * from emprestimo
+delete from emprestimo 
 
-    DECLARE @juros_total FLOAT = 0
+-- trigger - gatilhos. 
+-- bloco com um algoritmo que é acionado automaticamente. 
+-- Quando? voce movimenta informções em tabela(s)
+-- é acionada automaticamente de acordo com ações de insert, update, delete
+/*sintaxe
+create trigger NOME on TABELA for AÇÃO (insert, update, delete)
+as
+*/
 
-    -- fórmula PRICE
-    DECLARE @potencia FLOAT = POWER(1 + @taxajuros, @qtdparcela)
+alter trigger gatilho1 on emprestimo for insert,update
+as 
+  insert into logs values (getdate(),'alguma coisa esta acontecendo na tabela emprestimo')
+----------
 
-    DECLARE @valorparcela FLOAT =
-        @valoremprestimo * (@taxajuros * @potencia) / (@potencia - 1)
+select * from emprestimo
+insert into emprestimo values (2026,4,1,1000)
+update emprestimo set valorparcela = 1200 where sequencia = 388
 
-    WHILE (@parcela <= @qtdparcela)
-    BEGIN
-        DECLARE @juros FLOAT = @saldo * @taxajuros
-        DECLARE @amortizacao FLOAT = @valorparcela - @juros
+drop table logs
+create table logs (momento datetime, descricao varchar(200))
+select * from logs
 
-        SET @juros_total += @juros
+select * from proprietario 
+alter table proprietario add senha varchar(80)
 
-        INSERT INTO emprestimo (ano, mes, numeroparcela, valorparcela)
-        VALUES (@ano, @mes, @parcela, @valorparcela)
+/* criar uma trigger para a tabela proprietario quando insert e
+update acontecer na tabela, e que defina a senha do proprietario
+como seu nome invertido. Pode alterar a senha de todos os registros
+da tabela. */
 
-        SET @saldo -= @amortizacao
+select 'sandro'
+select reverse('sandro')
 
-        -- controle de data
-        IF @mes >= 12 
-        BEGIN 
-            SET @mes = 1 
-            SET @ano += 1
-        END
-        ELSE
-            SET @mes += 1    
+create trigger gatilho2 on proprietario for insert,update
+as 
+  update proprietario set senha = reverse(nome)
+----------
 
-        SET @parcela += 1
-    END
+select * from proprietario
+update proprietario set idade = 1 where codigo = 107
 
-    PRINT 'Total de juros pago: ' + CAST(@juros_total AS VARCHAR)
-END
+-- trigger utilizando inserted e deleted
+alter trigger alteramodelo on veiculo for update as 
+begin
+   declare @modeloantigo varchar(50)
+   declare @modelonovo varchar(50) 
+   set @modeloantigo = (select modelo from deleted)
+   select @modelonovo = modelo from inserted
+   declare @msg varchar(100)
+   set @msg = 'O modelo '+ @modeloantigo+ ' foi alterado 
+              para '+@modelonovo
+   print @msg
+   insert into log values (getdate(), @msg)
+end
 
-EXEC juros_simples 
-    @valoremprestimo = 20000, 
-    @qtdparcela = 12, 
-    @taxajuros = 0.02
+update veiculo set modelo = 'Doblo' where placa='BWO9997'
+select * from log
 
-SELECT * FROM emprestimo
+alter trigger alteramodelo on veiculo for update as 
+begin
+   declare @antigo varchar(50), @novo varchar(50), @msg varchar(100) 
+   if update (modelo) begin
+     select @antigo = modelo from deleted
+     select @novo = modelo from inserted
+     set @msg = 'O modelo '+ @antigo+ ' foi alterado p/ '+@novo
+   end
+   if update (cor) begin
+     select @antigo = cor from deleted
+     select @novo = cor from inserted
+     set @msg = 'A cor '+ @antigo+ ' foi alterado p/ '+@novo
+   end
+   print @msg
+   insert into log values (getdate(), @msg)
+end
 
-EXEC juros_compostos 
-    @valoremprestimo = 20000, 
-    @qtdparcela = 12, 
-    @taxajuros = 0.02
+update veiculo set cor = 'branco' where placa ='BWO9997'
+create table caixa (dia date, saldo decimal(10,2))
+create table operacao (nota int not null identity(100,1), 
+                       dia date, funcionario varchar(30),
+					   valor decimal(10,2))
+select * from caixa
+select * from operacao 
+alter table operacao add tipo varchar(1) 
 
-SELECT * FROM emprestimo
+alter trigger atualizacaixa on operacao for insert as
+begin
+   declare @valor decimal(10,2), @dia datetime, @tp varchar(1)
+   select @dia = dia, @valor = valor, @tp = tipo from inserted 
+   declare @qtd int=0
+   select @qtd = count(dia) from caixa where dia = @dia
+   if (@qtd = 0)
+        insert into caixa values (convert(date,current_timestamp),0)
+   if (@tp = 'E')
+        update caixa set saldo = saldo+@valor where dia = @dia
+   if (@tp = 'S')
+        update caixa set saldo = saldo-@valor where dia = @dia
+end
+
+insert into operacao values (convert(date,current_timestamp), 'sandro',50,'E')
+insert into operacao values (convert(date,current_timestamp), 'sandro',50,'S')
+insert into operacao values (convert(date,current_timestamp), 'sandro',20,'E')
+delete from caixa delete from operacao 
+
+/* triggers ddl 
+objetivo acionar quando comandos do tipo create, alter, drop. 
+recapitulando... 
+DML = linguagem manipulação dados - insert, update, delete, select. 
+DDL = linguagem definição dados - create, alter, drop.
+                          (create table, procedure, trigger, database
+						   alter table, procedures, trigger
+						   drop table, procures, trigger)
+*/
+-- utilizada bastante para auditoria de banco. 
+create table auditoria (dia date, descricao varchar(255))
+select * from auditoria
+
+alter trigger logauditoria on database for alter_table as
+begin
+    declare @dados XML = EVENTDATA()
+	declare @objeto sysname = @dados.value('(/EVENT_INSTANCE/ObjectName)[1]','sysname')
+	declare @evento sysname = @dados.value('(/EVENT_INSTANCE/EventType)[1]','sysname')
+	declare @banco sysname= @dados.value('(/EVENT_INSTANCE/DatabaseName)[1]','sysname')
+	declare @sql varchar(255)= @dados.value
+	             ('(/EVENT_INSTANCE/TSQLCommand/CommandText)[1]','varchar(255)')
+	insert into auditoria values (CURRENT_TIMESTAMP,'Alterando o objeto '+@objeto+ ' do '+ 
+	        'banco de dados '+ @banco + ' com o evento ' + @evento + ' e o comando sql =' +
+			@sql)
+  end
+
+alter table marca add campo2 int 
+
+ ('(/EVENT_INSTANCE/EventType)[1]', 'nvarchar(128)')
+   ('(/EVENT_INSTANCE/DatabaseName)[1]', 'nvarchar(128)')
+   ('(/EVENT_INSTANCE/SchemaName)[1]', 'nvarchar(128)')
+   ('(/EVENT_INSTANCE/ObjectName)[1]', 'nvarchar(128)')
+   ('(/EVENT_INSTANCE/LoginName)[1]', 'nvarchar(128)')
+   ('(/EVENT_INSTANCE/UserName)[1]', 'nvarchar(128)')
+   ('(/EVENT_INSTANCE/TSQLCommand/CommandText)[1]','nvarchar(1024)')
 
